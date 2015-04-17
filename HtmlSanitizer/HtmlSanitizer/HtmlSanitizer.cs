@@ -2,6 +2,7 @@
 using System.IO;
 using System.Xml;
 using HtmlAgilityPack;
+using System.Text;
 
 namespace Westwind.Web.Utilities
 {
@@ -93,8 +94,24 @@ namespace Westwind.Web.Utilities
                     var val = node.InnerHtml;
                     if (string.IsNullOrEmpty(node.InnerText))
                     {
-                        if (HasExpressionLinks(val) || HasScriptLinks(val) )
-                            node.ParentNode.RemoveChild(node);
+                        var splitstring = val.Split(';');
+                        StringBuilder sbRebuild = new StringBuilder();
+
+                        foreach (string item in splitstring)
+                        {
+                            string style = item.Split(':')[0];
+
+                            if (!BlackList.Contains(style.Trim()))
+                            {
+                                sbRebuild.Append(item + ";");
+                            }
+                        }
+
+                        node.InnerHtml = sbRebuild.ToString();
+                        if (node.InnerHtml.Length == 0)
+                        {
+                            node.Remove();
+                        }
                     }
                 }
 
@@ -108,21 +125,46 @@ namespace Westwind.Web.Utilities
                         var attr = currentAttribute.Name.ToLower();
                         var val = currentAttribute.Value.ToLower();
 
+                        if (BlackList.Contains(currentAttribute.Name))
+                        {
+                            node.Attributes.Remove(currentAttribute);
+                        }
+
                         // remove event handlers
-                        if (attr.StartsWith("on"))
+                        else if (attr.StartsWith("on"))
                             node.Attributes.Remove(currentAttribute);
 
                         // Remove CSS Expressions
                         else if (attr == "style" &&
-                                 val != null &&
-                                 HasExpressionLinks(val) || HasScriptLinks(val))
-                            node.Attributes.Remove(currentAttribute);
+                                 val != null)
+                        {
+                            
+                            var splitstring = val.Split(';');
+                            StringBuilder sbRebuild = new StringBuilder();
 
+                            foreach(string item in splitstring)
+                            {
+                                string style = item.Split(':')[0];
+
+                                if(!BlackList.Contains(style.Trim()))
+                                {
+                                    sbRebuild.Append(item + ";");
+                                }
+                            }
+                            string replacement = sbRebuild.ToString();
+                            currentAttribute.Value = replacement.Remove(replacement.Length - 1);
+                           
+                            if(currentAttribute.Value.Length == 0)
+                            {
+                                node.Attributes.Remove(currentAttribute);
+                            }
+
+                        }
                         // remove script links from all attributes
                         else if (
                             //(attr == "href" || attr== "src" || attr == "dynsrc" || attr == "lowsrc") &&
                                  val != null &&
-                                 HasScriptLinks(val) )                                 
+                                 HasScriptLinks(val))
                             node.Attributes.Remove(currentAttribute);
                     }
                 }
