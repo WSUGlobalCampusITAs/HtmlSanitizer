@@ -17,3 +17,5 @@ that you can tweak for you specific requirements.
 
 For more detailed info please refer to the Blog Post which discusses the reasoning behind
 this routine in more detail.
+
+This code has been modified from its original version to allow removal of styles and attributes using the same blacklist approach. 
