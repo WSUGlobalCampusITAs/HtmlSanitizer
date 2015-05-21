@@ -81,10 +81,10 @@ namespace Westwind.Web.Utilities
         {
             if (node.NodeType == HtmlNodeType.Element)
             {
-                // check for blacklist items and remove
+                // check for blacklist items and remove but append children to parent so that nodes children are not lost. 
                 if (BlackList.Contains(node.Name))
                 {
-                    node.Remove();
+                    MoveChildren(node);
                     return;
                 }
 
@@ -178,6 +178,27 @@ namespace Westwind.Web.Utilities
                     SanitizeHtmlNode(node.ChildNodes[i]);
                 }
             }
+        }
+
+        private void MoveChildren(HtmlNode node)
+        {
+            if (node.HasChildNodes)
+            {
+                for (int i = node.ChildNodes.Count - 1; i >= 0; i--)
+                {
+                    if (!BlackList.Contains(node.ChildNodes[i].Name))
+                    {
+                        var child = node.ChildNodes[i];
+                        node.ParentNode.InsertBefore(child, node);
+                        SanitizeHtmlNode(child);
+                    }
+                    else
+                    {
+                        MoveChildren(node.ChildNodes[i]);
+                    }
+                }
+            }
+                node.Remove();
         }
 
         private bool HasScriptLinks(string value)
